@@ -6,6 +6,8 @@ import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
 import AdminValidationPage from "./pages/AdminValidationPage.jsx";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute.jsx";
 import SessionWatcher from "./components/SessionWatcher.jsx";
+import ProtectedRoleRoute from "./components/ProtectedRoleRoute.jsx";
+import ReceiverDashboardPage from "./pages/ReceiverDashboardPage.jsx";
 
 export default function App() {
   return (
@@ -23,6 +25,14 @@ export default function App() {
             <ProtectedAdminRoute>
               <AdminValidationPage />
             </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/receptor/dashboard"
+          element={
+            <ProtectedRoleRoute requiredRole="RECEPTOR">
+              <ReceiverDashboardPage />
+            </ProtectedRoleRoute>
           }
         />
       </Routes>

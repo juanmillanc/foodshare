@@ -27,3 +27,29 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 
 CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id ON password_reset_tokens(user_id);
 CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token_hash ON password_reset_tokens(token_hash);
+
+-- =========================
+-- Donaciones (RF-03 / búsquedas para Receptor)
+-- =========================
+
+CREATE TABLE IF NOT EXISTS donations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  donor_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title VARCHAR(140) NOT NULL,
+  description TEXT,
+  category VARCHAR(60) NOT NULL,
+  quantity NUMERIC(12, 2),
+  unit VARCHAR(24),
+  expires_at TIMESTAMP NOT NULL,
+  pickup_address TEXT,
+  pickup_lat DOUBLE PRECISION NOT NULL,
+  pickup_lng DOUBLE PRECISION NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_donations_is_active ON donations(is_active);
+CREATE INDEX IF NOT EXISTS idx_donations_category ON donations(category);
+CREATE INDEX IF NOT EXISTS idx_donations_expires_at ON donations(expires_at);
+CREATE INDEX IF NOT EXISTS idx_donations_donor_id ON donations(donor_id);

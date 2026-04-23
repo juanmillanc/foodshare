@@ -37,7 +37,9 @@ export default function LoginPage() {
       const data = await loginUser(form);
       localStorage.setItem("foodshare_token", data.token);
       setMessage("Inicio de sesión exitoso.");
-      const nextPath = data.user?.role === "ADMIN" ? "/admin/validations" : "/login";
+      const role = String(data.user?.role || "").toUpperCase();
+      const nextPath =
+        role === "ADMIN" ? "/admin/validations" : role === "RECEPTOR" ? "/receptor/dashboard" : "/login";
       setTimeout(() => navigate(nextPath), 700);
     } catch (err) {
       setError(err.message);

@@ -4,6 +4,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
+import receiverRoutes from "./routes/receiver.routes.js";
 
 dotenv.config();
 
@@ -44,6 +45,7 @@ app.get("/api/health", (_req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/receiver", receiverRoutes);
 
 app.use((err, _req, res, _next) => {
   res.status(500).json({
