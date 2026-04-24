@@ -425,6 +425,36 @@ a {
   grid-column: 1 / -1;
 }
 
+.donation-actions {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #eef3fb;
+}
+
+.btn-reserve {
+  width: 100%;
+  border: 0;
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-weight: 800;
+  cursor: pointer;
+  background: linear-gradient(180deg, #1d67c1, #285ea8);
+  color: #fff;
+}
+
+.btn-reserve[disabled] {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.receiver-toast-inline {
+  position: static;
+  inset: auto;
+  margin: 0 0 12px;
+  max-width: none;
+  z-index: 1;
+}
+
 /* RF-03 · Donante — publicar excedente (móvil) */
 .donor-publish-page {
   min-height: 100vh;

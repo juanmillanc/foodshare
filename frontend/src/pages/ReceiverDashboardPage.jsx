@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { fetchReceiverDonationCategories, searchReceiverDonations } from "../api/receiverApi.js";
+import { io } from "socket.io-client";
+import {
+  fetchReceiverDonationCategories,
+  reserveReceiverDonation,
+  searchReceiverDonations
+} from "../api/receiverApi.js";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -46,6 +51,9 @@ export default function ReceiverDashboardPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
+  const [reservingId, setReservingId] = useState(null);
+  const [reserveSuccess, setReserveSuccess] = useState("");
+  const [reserveError, setReserveError] = useState("");
 
   const canSearch = useMemo(() => geo.lat != null && geo.lng != null, [geo.lat, geo.lng]);
 
@@ -61,6 +69,28 @@ export default function ReceiverDashboardPage() {
       });
     return () => {
       mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const socket = io(API_BASE, { transports: ["websocket", "polling"] });
+    const stripDonation = (donationId) => {
+      if (!donationId) return;
+      setResult((prev) => {
+        if (!prev || !Array.isArray(prev.data)) return prev;
+        const nextData = prev.data.filter((d) => d.id !== donationId);
+        const removed = prev.data.length - nextData.length;
+        if (removed === 0) return prev;
+        return {
+          ...prev,
+          data: nextData,
+          within_radius: Math.max(0, (prev.within_radius ?? 0) - removed)
+        };
+      });
+    };
+    socket.on("donation:reserved", (payload) => stripDonation(payload?.donationId));
+    return () => {
+      socket.disconnect();
     };
   }, []);
 
@@ -120,6 +150,30 @@ export default function ReceiverDashboardPage() {
   const suggestion =
     result && Array.isArray(result.data) && result.data.length === 0 ? result.suggested_radius_km : null;
 
+  const handleReserve = async (donationId) => {
+    setReserveError("");
+    setReserveSuccess("");
+    try {
+      setReservingId(donationId);
+      const data = await reserveReceiverDonation(donationId);
+      setReserveSuccess(data.message || "Reserva confirmada.");
+      setResult((prev) => {
+        if (!prev || !Array.isArray(prev.data)) return prev;
+        const nextData = prev.data.filter((d) => d.id !== donationId);
+        const removed = prev.data.length - nextData.length;
+        return {
+          ...prev,
+          data: nextData,
+          within_radius: Math.max(0, (prev.within_radius ?? 0) - removed)
+        };
+      });
+    } catch (err) {
+      setReserveError(err.message);
+    } finally {
+      setReservingId(null);
+    }
+  };
+
   return (
     <main className="receiver-page">
       <section className="receiver-card">
@@ -127,11 +181,11 @@ export default function ReceiverDashboardPage() {
           <div>
             <h1>Dashboard Receptor</h1>
             <p>
-              Búsqueda inteligente (RF-04): encuentra donaciones activas por categoría, distancia y tiempo restante
-              hasta el vencimiento.
+              Búsqueda inteligente (RF-04) y reserva en tiempo real (RF-05): aparta una publicación; el estado pasa a
+              reservado y desaparece de la búsqueda general hasta que venza el temporizador.
             </p>
           </div>
-          <span className="admin-chip">RF-04</span>
+          <span className="admin-chip">RF-04 · RF-05</span>
         </header>
 
         <div className="receiver-body">
@@ -201,6 +255,16 @@ export default function ReceiverDashboardPage() {
           </form>
 
           <section className="receiver-results">
+            {reserveSuccess ? (
+              <div className="toast toast-success receiver-toast-inline" role="status">
+                {reserveSuccess}
+              </div>
+            ) : null}
+            {reserveError ? (
+              <div className="toast toast-error receiver-toast-inline" role="alert">
+                {reserveError}
+              </div>
+            ) : null}
             {result ? (
               <>
                 <div className="receiver-results-header">
@@ -264,6 +328,16 @@ export default function ReceiverDashboardPage() {
                             <div>{d.pickup_address}</div>
                           </div>
                         ) : null}
+                        <div className="donation-actions">
+                          <button
+                            type="button"
+                            className="btn-reserve"
+                            disabled={reservingId != null}
+                            onClick={() => handleReserve(d.id)}
+                          >
+                            {reservingId === d.id ? "Reservando…" : "Reservar alimento"}
+                          </button>
+                        </div>
                       </article>
                     );
                     })}

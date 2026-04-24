@@ -1,4 +1,4 @@
-# FoodShare - Módulos de Autenticación + RF-03 (Donante) + RF-04 (Receptor)
+# FoodShare - Autenticación + RF-03 (Donante) + RF-04/RF-05 (Receptor)
 
 Implementación base Fullstack para:
 - Registro con roles `DONANTE` y `RECEPTOR`.
@@ -6,6 +6,7 @@ Implementación base Fullstack para:
 - Recuperación y restablecimiento de contraseña por correo SMTP.
 - RF-03: Publicación de excedentes para `DONANTE` (tipo, cantidad, fechas, fotos obligatorias, validación de vencimiento).
 - RF-04: Búsqueda inteligente de donaciones para `RECEPTOR` (categoría, radio por geolocalización, tiempo restante).
+- RF-05: Reserva de alimentos (`RESERVADO`), WebSockets en tiempo real, temporizador y aviso por correo al donante.
 
 ## 1) Backend
 
@@ -28,6 +29,12 @@ Si ya tenías la tabla `donations` sin `prepared_at` ni fotos, ejecuta también:
 
 ```bash
 psql "$DATABASE_URL" -f backend/migrations/003_donation_publication_rf03.sql
+```
+
+Para reservas (RF-05):
+
+```bash
+psql "$DATABASE_URL" -f backend/migrations/004_rf05_reservations.sql
 ```
 
 ### Endpoints
@@ -75,9 +82,17 @@ psql "$DATABASE_URL" -f backend/migrations/003_donation_publication_rf03.sql
     - Filtra solo donaciones activas (`is_active=true`) y no vencidas (`expires_at > NOW()`).
     - Calcula distancia desde el receptor a cada donación (Google Maps Distance Matrix si hay API Key; si no, usa cálculo aproximado).
     - Si no hay resultados dentro del radio, retorna `suggested_radius_km` para sugerir ampliar el rango.
+    - Solo lista donaciones en estado **`DISPONIBLE`** (las reservadas no aparecen en la búsqueda general).
+
+- `POST /api/receiver/donations/:id/reserve` (Bearer token RECEPTOR)
+  - Aparta la publicación: pasa a **`RESERVADO`**, guarda `reserved_until` (temporizador) y **notifica por correo** al donante (si SMTP está configurado).
+  - Si otro receptor reserva al mismo tiempo, responde **409** (`ALREADY_RESERVED_OR_UNAVAILABLE`).
+  - Tras una reserva exitosa, el servidor emite por **Socket.IO** el evento `donation:reserved` para actualizar el listado en tiempo real en todas las pestañas conectadas.
 
 #### Variables de entorno (Backend)
 - `GOOGLE_MAPS_API_KEY` (opcional): habilita cálculo de distancia con Google Maps (Distance Matrix).
+- `RESERVATION_MINUTES` (opcional, default `30`): duración máxima de la reserva antes del auto-liberado por barrido.
+- `RESERVATION_SWEEP_MS` (opcional, default `60000`): frecuencia del proceso que libera reservas vencidas (vuelven a `DISPONIBLE`).
 
 ## 2) Frontend
 
@@ -99,6 +114,10 @@ Rutas UI:
 - La UI solicita geolocalización del navegador para obtener `receptor_lat/lng`.
 - Permite filtrar por categoría, radio (km) y horas restantes para el vencimiento.
 - Si no hay donaciones en el radio seleccionado, sugiere ampliar el rango.
+
+### RF-05 (Reserva en el dashboard receptor)
+- Botón **Reservar** por tarjeta; confirmación visual y la fila desaparece al instante.
+- Conexión **Socket.IO** al mismo host que el API (`VITE_API_URL` / `http://localhost:4000`) para recibir `donation:reserved` cuando otro usuario aparta una publicación.
 
 ### RF-03 (Formulario publicar excedente — Donante)
 - Flujo por secciones (alimento, fechas, retiro, fotos) pensado para **móvil** (campos altos, botón principal fijo abajo).

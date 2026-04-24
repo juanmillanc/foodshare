@@ -88,6 +88,24 @@ CREATE INDEX IF NOT EXISTS idx_donations_expires_at ON donations(expires_at);
 CREATE INDEX IF NOT EXISTS idx_donations_donor_id ON donations(donor_id);
 CREATE INDEX IF NOT EXISTS idx_donations_prepared_at ON donations(prepared_at);
 
+-- RF-05: reservas (receptor aparta publicación)
+ALTER TABLE donations ADD COLUMN IF NOT EXISTS reservation_status VARCHAR(20) NOT NULL DEFAULT 'DISPONIBLE';
+
+UPDATE donations SET reservation_status = 'DISPONIBLE' WHERE reservation_status IS NULL;
+
+ALTER TABLE donations DROP CONSTRAINT IF EXISTS donations_reservation_status_check;
+
+ALTER TABLE donations ADD CONSTRAINT donations_reservation_status_check
+  CHECK (reservation_status IN ('DISPONIBLE', 'RESERVADO'));
+
+ALTER TABLE donations ADD COLUMN IF NOT EXISTS reserved_by_receptor_id UUID REFERENCES users(id) ON DELETE SET NULL;
+
+ALTER TABLE donations ADD COLUMN IF NOT EXISTS reserved_until TIMESTAMP;
+
+ALTER TABLE donations ADD COLUMN IF NOT EXISTS reserved_at TIMESTAMP;
+
+CREATE INDEX IF NOT EXISTS idx_donations_reservation_status ON donations(reservation_status);
+
 CREATE TABLE IF NOT EXISTS donation_photos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   donation_id UUID NOT NULL REFERENCES donations(id) ON DELETE CASCADE,

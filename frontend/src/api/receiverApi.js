@@ -8,14 +8,23 @@ function getAuthHeaders() {
 async function handleJson(res) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const msg = data?.message || "Error inesperado.";
-    throw new Error(msg);
+    const detail = data?.code ? ` (${data.code})` : "";
+    const msg = data?.message || `Error HTTP ${res.status}.`;
+    throw new Error(msg + detail);
   }
   return data;
 }
 
 export async function fetchReceiverDonationCategories() {
   const res = await fetch(`${API_BASE}/api/receiver/donations/categories`, {
+    headers: { ...getAuthHeaders() }
+  });
+  return handleJson(res);
+}
+
+export async function reserveReceiverDonation(donationId) {
+  const res = await fetch(`${API_BASE}/api/receiver/donations/${encodeURIComponent(donationId)}/reserve`, {
+    method: "POST",
     headers: { ...getAuthHeaders() }
   });
   return handleJson(res);

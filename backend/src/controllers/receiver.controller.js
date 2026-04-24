@@ -1,6 +1,8 @@
 import { pool } from "../config/db.js";
+import { mailer } from "../config/mailer.js";
 import { distanceMatrixMeters } from "../services/googleMaps.js";
 import { haversineDistanceMeters, normalizeLatLng } from "../utils/geo.js";
+import { emitDonationReserved } from "../realtime/realtimeHub.js";
 
 function normalizeCategory(raw) {
   const s = String(raw || "").trim();
@@ -26,6 +28,7 @@ export async function listActiveDonationCategories(_req, res) {
        FROM donations
        WHERE is_active = true
          AND expires_at > NOW()
+         AND reservation_status = 'DISPONIBLE'
        ORDER BY category ASC`
     );
 
@@ -59,7 +62,7 @@ export async function searchDonations(req, res) {
     // 1) Consultar DB: solo activos y no vencidos. El filtro de horas define ventana máxima.
     const values = [];
     let idx = 1;
-    let where = `WHERE d.is_active = true AND d.expires_at > NOW()`;
+    let where = `WHERE d.is_active = true AND d.expires_at > NOW() AND d.reservation_status = 'DISPONIBLE'`;
 
     if (category) {
       values.push(category);
@@ -181,6 +184,113 @@ export async function searchDonations(req, res) {
     });
   } catch (error) {
     return res.status(500).json({ message: "No fue posible buscar donaciones.", error: error.message });
+  }
+}
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function reservationMinutes() {
+  const n = Number(process.env.RESERVATION_MINUTES || 30);
+  if (!Number.isFinite(n) || n < 5) return 30;
+  return Math.min(120, Math.floor(n));
+}
+
+export async function reserveDonation(req, res) {
+  try {
+    const donationId = String(req.params.id || "").trim();
+    if (!UUID_RE.test(donationId)) {
+      return res.status(400).json({ message: "Identificador de donación inválido." });
+    }
+
+    const receptorId = req.currentUser?.id;
+    if (!receptorId) {
+      return res.status(401).json({ message: "No autorizado." });
+    }
+
+    const minutes = reservationMinutes();
+
+    const updateResult = await pool.query(
+      `UPDATE donations
+       SET reservation_status = 'RESERVADO',
+           reserved_by_receptor_id = $2,
+           reserved_until = NOW() + ($3 * INTERVAL '1 minute'),
+           reserved_at = NOW(),
+           updated_at = NOW()
+       WHERE id = $1
+         AND is_active = true
+         AND expires_at > NOW()
+         AND reservation_status = 'DISPONIBLE'
+       RETURNING id, title, donor_id, reserved_until`,
+      [donationId, receptorId, minutes]
+    );
+
+    if (updateResult.rows.length === 0) {
+      const exists = await pool.query(`SELECT id FROM donations WHERE id = $1`, [donationId]);
+      if (exists.rows.length === 0) {
+        return res.status(404).json({ message: "La donación no existe." });
+      }
+      return res.status(409).json({
+        message:
+          "Esta publicación ya no está disponible (otro receptor la reservó en este momento o el producto no está activo).",
+        code: "ALREADY_RESERVED_OR_UNAVAILABLE"
+      });
+    }
+
+    const updatedRow = updateResult.rows[0];
+
+    const donorRes = await pool.query(`SELECT name, email FROM users WHERE id = $1`, [updatedRow.donor_id]);
+    const receptorRes = await pool.query(`SELECT name FROM users WHERE id = $1`, [receptorId]);
+    const donorEmail = donorRes.rows[0]?.email;
+    const donorName = donorRes.rows[0]?.name || "Donante";
+    const receptorName = receptorRes.rows[0]?.name || "Receptor";
+
+    emitDonationReserved({
+      donationId: updatedRow.id,
+      reservedUntil: updatedRow.reserved_until,
+      reservedByReceptorId: receptorId,
+      receptorName
+    });
+
+    const untilStr = new Date(updatedRow.reserved_until).toLocaleString("es-CO", {
+      dateStyle: "short",
+      timeStyle: "short"
+    });
+
+    if (donorEmail && process.env.SMTP_HOST && process.env.SMTP_USER) {
+      try {
+        await mailer.sendMail({
+          from: process.env.SMTP_FROM,
+          to: donorEmail,
+          subject: `FoodShare — Reserva: ${updatedRow.title}`,
+          html: `
+            <p>Hola ${donorName},</p>
+            <p><strong>${receptorName}</strong> reservó tu publicación <strong>${updatedRow.title}</strong>.</p>
+            <p>La reserva vence el <strong>${untilStr}</strong>. Si no se concreta la entrega, el sistema puede liberarla automáticamente al vencer el tiempo.</p>
+            <p>— FoodShare</p>
+          `
+        });
+      } catch (mailErr) {
+        console.error("[reserve] correo al donante:", mailErr.message);
+      }
+    }
+
+    return res.status(200).json({
+      message: `Reserva confirmada. Tienes hasta ${untilStr} para coordinar la entrega.`,
+      data: {
+        donation_id: updatedRow.id,
+        reserved_until: updatedRow.reserved_until,
+        reservation_minutes: minutes
+      }
+    });
+  } catch (error) {
+    if (error?.code === "42703") {
+      return res.status(500).json({
+        message:
+          "Faltan columnas de reserva en la base de datos. Ejecuta backend/migrations/004_rf05_reservations.sql o vuelve a aplicar backend/database.sql."
+      });
+    }
+    return res.status(500).json({ message: "No fue posible reservar la donación.", error: error.message });
   }
 }
 

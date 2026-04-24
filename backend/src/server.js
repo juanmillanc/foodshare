@@ -1,3 +1,4 @@
+import http from "http";
 import express from "express";
 import helmet from "helmet";
 import cors from "cors";
@@ -6,6 +7,7 @@ import authRoutes from "./routes/auth.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import receiverRoutes from "./routes/receiver.routes.js";
 import donorRoutes from "./routes/donor.routes.js";
+import { initRealtime, startReservationSweeper } from "./realtime/realtimeHub.js";
 
 dotenv.config();
 
@@ -79,6 +81,10 @@ app.use((err, _req, res, _next) => {
 });
 
 const port = Number(process.env.PORT || 4000);
-app.listen(port, () => {
+const httpServer = http.createServer(app);
+initRealtime(httpServer);
+startReservationSweeper();
+
+httpServer.listen(port, () => {
   console.log(`FoodShare backend ejecutándose en http://localhost:${port}`);
 });
