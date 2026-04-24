@@ -29,3 +29,20 @@ export const uploadPdf = multer({
     fileSize: 5 * 1024 * 1024
   }
 });
+
+const imageMimeTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+const imageFileFilter = (_req, file, cb) => {
+  if (!imageMimeTypes.has(file.mimetype)) {
+    return cb(new Error("Solo se permiten imágenes JPG, PNG o WebP."));
+  }
+  cb(null, true);
+};
+
+export const uploadDonationImages = multer({
+  storage,
+  fileFilter: imageFileFilter,
+  limits: {
+    fileSize: 8 * 1024 * 1024
+  }
+});

@@ -5,10 +5,33 @@ import dotenv from "dotenv";
 import authRoutes from "./routes/auth.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import receiverRoutes from "./routes/receiver.routes.js";
+import donorRoutes from "./routes/donor.routes.js";
 
 dotenv.config();
 
 const app = express();
+
+function isLocalDevOrigin(origin) {
+  if (!origin) return false;
+  return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
+}
+
+function corsOrigin(origin, callback) {
+  if (!origin) {
+    return callback(null, true);
+  }
+  const configured = String(process.env.FRONTEND_URL || "http://localhost:5173")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (configured.includes(origin)) {
+    return callback(null, true);
+  }
+  if (process.env.NODE_ENV !== "production" && isLocalDevOrigin(origin)) {
+    return callback(null, true);
+  }
+  return callback(null, false);
+}
 
 app.use(
   helmet({
@@ -18,7 +41,7 @@ app.use(
 );
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
+    origin: corsOrigin,
     credentials: true
   })
 );
@@ -46,6 +69,7 @@ app.get("/api/health", (_req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/receiver", receiverRoutes);
+app.use("/api/donor", donorRoutes);
 
 app.use((err, _req, res, _next) => {
   res.status(500).json({

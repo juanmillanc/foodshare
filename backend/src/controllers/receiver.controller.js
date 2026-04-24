@@ -83,12 +83,19 @@ export async function searchDonations(req, res) {
            d.category,
            d.quantity,
            d.unit,
+           d.prepared_at,
            d.expires_at,
            d.pickup_address,
            d.pickup_lat,
            d.pickup_lng,
            d.donor_id,
-           u.name AS donor_name
+           u.name AS donor_name,
+           COALESCE(
+             (SELECT json_agg(dp.file_path ORDER BY dp.sort_order)
+              FROM donation_photos dp
+              WHERE dp.donation_id = d.id),
+             '[]'::json
+           ) AS photos
          FROM donations d
          JOIN users u ON u.id = d.donor_id
          ${where}

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import AuthLayout from "../components/AuthLayout.jsx";
+import PasswordField from "../components/PasswordField.jsx";
 import { registerUser } from "../api/authApi.js";
 
 export default function RegisterPage() {
@@ -76,7 +77,13 @@ export default function RegisterPage() {
       <form className="auth-form" onSubmit={onSubmit}>
         <input type="text" name="name" placeholder="Nombre completo" onChange={onChange} value={form.name} />
         <input type="email" name="email" placeholder="Correo electrónico" onChange={onChange} value={form.email} />
-        <input type="password" name="password" placeholder="Contraseña" onChange={onChange} value={form.password} />
+        <PasswordField
+          name="password"
+          placeholder="Contraseña"
+          value={form.password}
+          onChange={onChange}
+          autoComplete="new-password"
+        />
 
         <label>Registrarse como:</label>
         <div className="role-switch">

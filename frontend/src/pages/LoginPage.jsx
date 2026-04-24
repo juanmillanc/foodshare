@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AuthLayout from "../components/AuthLayout.jsx";
+import PasswordField from "../components/PasswordField.jsx";
 import { loginUser } from "../api/authApi.js";
 
 export default function LoginPage() {
@@ -39,7 +40,13 @@ export default function LoginPage() {
       setMessage("Inicio de sesión exitoso.");
       const role = String(data.user?.role || "").toUpperCase();
       const nextPath =
-        role === "ADMIN" ? "/admin/validations" : role === "RECEPTOR" ? "/receptor/dashboard" : "/login";
+        role === "ADMIN"
+          ? "/admin/validations"
+          : role === "RECEPTOR"
+            ? "/receptor/dashboard"
+            : role === "DONANTE"
+              ? "/donante/publicar-excedente"
+              : "/login";
       setTimeout(() => navigate(nextPath), 700);
     } catch (err) {
       setError(err.message);
@@ -58,7 +65,13 @@ export default function LoginPage() {
     >
       <form className="auth-form" onSubmit={onSubmit}>
         <input type="email" name="email" placeholder="Correo electrónico" onChange={onChange} value={form.email} />
-        <input type="password" name="password" placeholder="Contraseña" onChange={onChange} value={form.password} />
+        <PasswordField
+          name="password"
+          placeholder="Contraseña"
+          value={form.password}
+          onChange={onChange}
+          autoComplete="current-password"
+        />
         <div className="helper-row">
           <span />
           <Link to="/forgot-password">¿Olvidaste tu contraseña?</Link>

@@ -66,6 +66,50 @@ body {
   box-shadow: 0 0 0 2px rgba(47, 151, 57, 0.2);
 }
 
+.auth-password-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.auth-password-wrap input {
+  width: 100%;
+  border: 1px solid #cdd4e1;
+  border-radius: 8px;
+  padding: 11px 44px 11px 12px;
+  outline: none;
+}
+
+.auth-password-wrap input:focus {
+  border-color: #2f9739;
+  box-shadow: 0 0 0 2px rgba(47, 151, 57, 0.2);
+}
+
+.auth-password-toggle {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  padding: 8px;
+  cursor: pointer;
+  color: #5f7188;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  line-height: 0;
+}
+
+.auth-password-toggle:hover {
+  background: #eef2f7;
+  color: #2f9739;
+}
+
+.auth-password-toggle:focus-visible {
+  outline: 2px solid #2f9739;
+  outline-offset: 2px;
+}
+
 .auth-form button[type="submit"] {
   border: 0;
   border-radius: 8px;
@@ -359,6 +403,259 @@ a {
   .donation-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.donation-thumb-wrap {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e6edf8;
+  max-height: 200px;
+  background: #f6faff;
+}
+
+.donation-thumb {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-height: 200px;
+  object-fit: cover;
+}
+
+.donation-meta-wide {
+  grid-column: 1 / -1;
+}
+
+/* RF-03 · Donante — publicar excedente (móvil) */
+.donor-publish-page {
+  min-height: 100vh;
+  padding: 16px 14px 120px;
+  background: linear-gradient(180deg, #eef6ef 0%, #f4f7fb 100%);
+}
+
+.donor-publish-shell {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.donor-publish-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.donor-publish-header h1 {
+  margin: 4px 0 8px;
+  color: #1f4d2a;
+  font-size: 1.45rem;
+}
+
+.donor-publish-kicker {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #2f9739;
+  text-transform: uppercase;
+}
+
+.donor-publish-lead {
+  margin: 0;
+  color: #5f7593;
+  line-height: 1.45;
+  font-size: 0.95rem;
+}
+
+.donor-publish-logout {
+  border: 1px solid #c8d8ef;
+  background: #fff;
+  color: #2a4f7d;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.donor-publish-form {
+  display: grid;
+  gap: 12px;
+}
+
+.donor-publish-section {
+  background: #fff;
+  border: 1px solid #e6edf8;
+  border-radius: 14px;
+  padding: 14px 14px 16px;
+  box-shadow: 0 10px 22px rgba(12, 34, 67, 0.05);
+}
+
+.donor-publish-section h2 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  color: #1d3f72;
+}
+
+.donor-field {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.donor-field:last-child {
+  margin-bottom: 0;
+}
+
+.donor-field > span {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #506780;
+}
+
+.donor-field input,
+.donor-field select {
+  width: 100%;
+  border: 1px solid #cdd4e1;
+  border-radius: 12px;
+  padding: 14px 12px;
+  font-size: 1rem;
+  outline: none;
+  min-height: 48px;
+}
+
+.donor-field input:focus,
+.donor-field select:focus {
+  border-color: #2f9739;
+  box-shadow: 0 0 0 2px rgba(47, 151, 57, 0.2);
+}
+
+.donor-field-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.donor-coord-actions {
+  margin-bottom: 4px;
+}
+
+.donor-coord-row {
+  margin-top: 4px;
+}
+
+.donor-field-grow {
+  flex: 1 1 200px;
+}
+
+.donor-field-unit {
+  flex: 0 0 160px;
+}
+
+.donor-hint {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #637184;
+}
+
+.donor-inline-error {
+  margin: 0 0 8px;
+}
+
+.donor-file-input {
+  display: none;
+}
+
+.donor-photo-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.donor-secondary-btn {
+  border: 1px solid #c8d8ef;
+  background: #f3f8ff;
+  color: #2a4f7d;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-weight: 700;
+  cursor: pointer;
+  min-height: 48px;
+}
+
+.donor-photo-count {
+  font-size: 0.88rem;
+  color: #506780;
+  font-weight: 600;
+}
+
+.donor-photo-grid {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.donor-photo-tile {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #e6edf8;
+  background: #f6faff;
+}
+
+.donor-photo-tile img {
+  display: block;
+  width: 100%;
+  height: 110px;
+  object-fit: cover;
+}
+
+.donor-photo-remove {
+  width: 100%;
+  border: 0;
+  background: rgba(29, 63, 114, 0.92);
+  color: #fff;
+  font-weight: 700;
+  padding: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.donor-publish-sticky {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 12px 0 8px;
+  margin-top: 4px;
+  background: linear-gradient(180deg, rgba(244, 247, 251, 0), #f4f7fb 28%);
+}
+
+.donor-sticky-msg {
+  margin: 0 0 8px;
+}
+
+.donor-primary-btn {
+  width: 100%;
+  border: 0;
+  border-radius: 14px;
+  padding: 16px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #fff;
+  cursor: pointer;
+  background: linear-gradient(0deg, #238a2e, #3eb44a);
+  min-height: 52px;
+}
+
+.donor-primary-btn[disabled] {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .admin-card {

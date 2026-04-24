@@ -1,6 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchReceiverDonationCategories, searchReceiverDonations } from "../api/receiverApi.js";
 
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
+
+function normalizePhotos(raw) {
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 function formatKm(meters) {
   if (meters == null) return "—";
   const km = meters / 1000;
@@ -111,9 +126,12 @@ export default function ReceiverDashboardPage() {
         <header className="receiver-header">
           <div>
             <h1>Dashboard Receptor</h1>
-            <p>Busca donaciones activas filtrando por categoría, distancia y tiempo restante.</p>
+            <p>
+              Búsqueda inteligente (RF-04): encuentra donaciones activas por categoría, distancia y tiempo restante
+              hasta el vencimiento.
+            </p>
           </div>
-          <span className="admin-chip">RF-03</span>
+          <span className="admin-chip">RF-04</span>
         </header>
 
         <div className="receiver-body">
@@ -198,7 +216,10 @@ export default function ReceiverDashboardPage() {
 
                 {Array.isArray(result.data) && result.data.length > 0 ? (
                   <div className="donation-grid">
-                    {result.data.map((d) => (
+                    {result.data.map((d) => {
+                      const photos = normalizePhotos(d.photos);
+                      const thumb = photos[0];
+                      return (
                       <article key={d.id} className="donation-card">
                         <div className="donation-top">
                           <div>
@@ -209,6 +230,12 @@ export default function ReceiverDashboardPage() {
                           </div>
                           <span className="donation-badge">Activa</span>
                         </div>
+
+                        {thumb ? (
+                          <div className="donation-thumb-wrap">
+                            <img className="donation-thumb" src={`${API_BASE}${thumb}`} alt="" loading="lazy" />
+                          </div>
+                        ) : null}
 
                         {d.description ? <p className="donation-desc">{d.description}</p> : null}
 
@@ -223,6 +250,12 @@ export default function ReceiverDashboardPage() {
                               {d.quantity != null ? d.quantity : "—"} {d.unit || ""}
                             </strong>
                           </div>
+                          {d.prepared_at ? (
+                            <div className="donation-meta-wide">
+                              <span className="receiver-muted">Preparación</span>
+                              <strong>{new Date(d.prepared_at).toLocaleString()}</strong>
+                            </div>
+                          ) : null}
                         </div>
 
                         {d.pickup_address ? (
@@ -232,7 +265,8 @@ export default function ReceiverDashboardPage() {
                           </div>
                         ) : null}
                       </article>
-                    ))}
+                    );
+                    })}
                   </div>
                 ) : (
                   <div className="receiver-empty">

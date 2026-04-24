@@ -1,9 +1,12 @@
-const API_URL = "http://localhost:4000/api/auth";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const API_URL = `${API_BASE}/api/auth`;
 
 async function parseResponse(response) {
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(payload.message || "Ocurrió un error inesperado.");
+    const detail = payload.error ? ` ${payload.error}` : "";
+    const base = payload.message || `Error HTTP ${response.status}.`;
+    throw new Error(base + detail);
   }
   return payload;
 }

@@ -126,17 +126,30 @@ router.post("/forgot-password", async (req, res) => {
 
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${rawToken}`;
 
-    await mailer.sendMail({
-      from: process.env.SMTP_FROM,
-      to: user.email,
-      subject: "FoodShare - Restablecer contraseña",
-      html: `
+    try {
+      await mailer.sendMail({
+        from: process.env.SMTP_FROM,
+        to: user.email,
+        subject: "FoodShare - Restablecer contraseña",
+        html: `
         <p>Hola,</p>
         <p>Recibimos una solicitud para restablecer tu contraseña.</p>
         <p>Haz clic en el siguiente enlace (válido por 30 minutos):</p>
         <p><a href="${resetUrl}">${resetUrl}</a></p>
       `
-    });
+      });
+    } catch (mailError) {
+      await pool.query(
+        `DELETE FROM password_reset_tokens
+         WHERE user_id = $1 AND token_hash = $2`,
+        [user.id, tokenHash]
+      );
+      return res.status(502).json({
+        message:
+          "No se pudo enviar el correo de recuperación. Revisa SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS y SMTP_FROM en backend/.env (Gmail: usa contraseña de aplicación, sin espacios).",
+        error: mailError.message
+      });
+    }
 
     return res.status(200).json({ message: GENERIC_RECOVERY_MESSAGE });
   } catch (error) {

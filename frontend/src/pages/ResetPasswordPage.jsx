@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import AuthLayout from "../components/AuthLayout.jsx";
+import PasswordField from "../components/PasswordField.jsx";
 import { resetPassword } from "../api/authApi.js";
 
 export default function ResetPasswordPage() {
@@ -45,12 +46,12 @@ export default function ResetPasswordPage() {
       footerTo="/login"
     >
       <form className="auth-form" onSubmit={onSubmit}>
-        <input
-          type="password"
+        <PasswordField
           name="password"
           placeholder="Nueva contraseña"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
+          autoComplete="new-password"
         />
         <button type="submit" disabled={loading}>
           {loading ? "Actualizando..." : "Actualizar contraseña"}
